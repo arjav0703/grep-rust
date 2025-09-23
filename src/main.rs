@@ -49,11 +49,20 @@ fn regex_handler(input_line: &str, pattern: &str) -> bool {
 }
 
 fn character_grp_handler(input_line: &str, pattern: &str) -> bool {
-    let chars: Vec<char> = pattern[1..pattern.len() - 1].chars().collect();
-    for c in chars {
-        if input_line.contains(c) {
-            return true;
+    if pattern.chars().nth(1).expect("ERR") == '^' {
+        println!("Negated character group");
+
+        let forbidden: Vec<char> = pattern[2..pattern.len() - 1].chars().collect();
+
+        input_line.chars().any(|c| !forbidden.contains(&c))
+    } else {
+        println!("Normal character group");
+        let chars: Vec<char> = pattern[1..pattern.len() - 1].chars().collect();
+        for c in chars {
+            if input_line.contains(c) {
+                return true;
+            }
         }
+        false
     }
-    false
 }
