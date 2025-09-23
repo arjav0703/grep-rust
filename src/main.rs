@@ -7,6 +7,8 @@ fn match_pattern(input_line: &str, pattern: &str) -> bool {
         input_line.contains(pattern)
     } else if pattern.starts_with(r"\") && pattern.len() == 2 {
         regex_handler(input_line, pattern)
+    } else if pattern.starts_with('[') && pattern.ends_with(']') {
+        character_grp_handler(input_line, pattern)
     } else {
         panic!("Unhandled pattern: {}", pattern)
     }
@@ -44,4 +46,14 @@ fn regex_handler(input_line: &str, pattern: &str) -> bool {
             .any(|c| !(c.is_alphanumeric() || c == '_')),
         _ => panic!("Unhandled special character: {}", special_char),
     }
+}
+
+fn character_grp_handler(input_line: &str, pattern: &str) -> bool {
+    let chars: Vec<char> = pattern[1..pattern.len() - 1].chars().collect();
+    for c in chars {
+        if input_line.contains(c) {
+            return true;
+        }
+    }
+    false
 }
