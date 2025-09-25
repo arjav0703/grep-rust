@@ -59,7 +59,15 @@ fn match_advanced(input_line: &str, pattern: &str) -> Result<bool, String> {
             //^ doesn't match a character, it matches the start of a line.
             // Example: ^log should match "log", but not "slog".
 
-            if input_iter.next() != Some(pattern_iter.next().unwrap_or('\0')) {
+            if input_iter.next() != Some(pattern_iter.next().unwrap_or('\0'))
+                && pattern_iter.next().is_some()
+            {
+                return Ok(false);
+            }
+        } else if pattern_char == '$' {
+            // $ doesn't match a character, it matches the end of a line.
+            // Example: log$ should match "log", but not "logs".
+            if input_iter.next().is_some() {
                 return Ok(false);
             }
         } else {
