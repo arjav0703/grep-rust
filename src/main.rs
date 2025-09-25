@@ -87,12 +87,12 @@ fn main() {
         process::exit(1);
     }
 
+    let file_name = env::args().nth(3).unwrap();
+    let file_content = std::fs::read_to_string(&file_name).unwrap();
+
     let pattern = env::args().nth(2).unwrap();
-    let mut input_line = String::new();
 
-    io::stdin().read_line(&mut input_line).unwrap();
-
-    let result = match_advanced(&input_line, &pattern).unwrap_or(false);
+    let result = match_advanced(&file_content, &pattern).unwrap_or(false);
 
     if result {
         process::exit(0)
