@@ -2,16 +2,66 @@ use std::env;
 use std::io;
 use std::process;
 
-fn match_pattern(input_line: &str, pattern: &str) -> bool {
-    if pattern.chars().count() == 1 {
-        input_line.contains(pattern)
-    } else if pattern.starts_with(r"\") && pattern.len() == 2 {
-        regex_handler(input_line, pattern)
-    } else if pattern.starts_with('[') && pattern.ends_with(']') {
-        character_grp_handler(input_line, pattern)
-    } else {
-        panic!("Unhandled pattern: {}", pattern)
+fn match_advanced(input_line: &str, pattern: &str) -> Result<bool, String> {
+    let mut input_iter = input_line.chars();
+    let mut pattern_iter = pattern.chars();
+
+    while let Some(pattern_char) = pattern_iter.next() {
+        if pattern_char == '\\' {
+            match pattern_iter.next() {
+                Some('d') => {
+                    if !input_iter.any(|c| c.is_ascii_digit()) {
+                        return Ok(false);
+                    }
+                }
+                Some('w') => {
+                    if !input_iter.any(|c| c.is_alphanumeric() || c == '_') {
+                        return Ok(false);
+                    }
+                }
+                Some('s') => {
+                    if !input_iter.any(|c| c.is_whitespace()) {
+                        return Ok(false);
+                    }
+                }
+                Some(other) => return Err(format!("Unhandled escape sequence: \\{}", other)),
+                None => return Err("Pattern ends with a single backslash".to_string()),
+            }
+        } else if pattern_char == '[' {
+            let mut char_group = String::new();
+            while let Some(c) = pattern_iter.next() {
+                if c == ']' {
+                    break;
+                }
+                char_group.push(c);
+            }
+            if char_group.is_empty() {
+                return Err("Empty character group".to_string());
+            }
+            let is_negated = char_group.starts_with('^');
+            let chars: Vec<char> = if is_negated {
+                char_group[1..].chars().collect()
+            } else {
+                char_group.chars().collect()
+            };
+            let matches = input_iter.any(|c| {
+                if is_negated {
+                    !chars.contains(&c)
+                } else {
+                    chars.contains(&c)
+                }
+            });
+            if !matches {
+                return Ok(false);
+            }
+        } else {
+            if !input_iter.any(|c| c == pattern_char) {
+                return Ok(false);
+            }
+        }
     }
+
+    Ok(true)
 }
 
 // Usage: echo <input_text> | your_program.sh -E <pattern>
@@ -26,43 +76,11 @@ fn main() {
 
     io::stdin().read_line(&mut input_line).unwrap();
 
-    if match_pattern(&input_line, &pattern) {
+    let result = match_advanced(&input_line, &pattern).unwrap_or(false);
+
+    if result {
         process::exit(0)
     } else {
         process::exit(1)
-    }
-}
-
-fn regex_handler(input_line: &str, pattern: &str) -> bool {
-    let special_char = pattern.chars().nth(1).unwrap();
-    match special_char {
-        'd' => input_line.chars().any(|c| c.is_ascii_digit()),
-        'D' => input_line.chars().any(|c| !c.is_ascii_digit()),
-        's' => input_line.chars().any(|c| c.is_whitespace()),
-        'S' => input_line.chars().any(|c| !c.is_whitespace()),
-        'w' => input_line.chars().any(|c| c.is_alphanumeric() || c == '_'),
-        'W' => input_line
-            .chars()
-            .any(|c| !(c.is_alphanumeric() || c == '_')),
-        _ => panic!("Unhandled special character: {}", special_char),
-    }
-}
-
-fn character_grp_handler(input_line: &str, pattern: &str) -> bool {
-    if pattern.chars().nth(1).expect("ERR") == '^' {
-        println!("Negated character group");
-
-        let forbidden: Vec<char> = pattern[2..pattern.len() - 1].chars().collect();
-
-        input_line.chars().any(|c| !forbidden.contains(&c))
-    } else {
-        println!("Normal character group");
-        let chars: Vec<char> = pattern[1..pattern.len() - 1].chars().collect();
-        for c in chars {
-            if input_line.contains(c) {
-                return true;
-            }
-        }
-        false
     }
 }
