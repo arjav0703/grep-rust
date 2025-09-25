@@ -24,6 +24,7 @@ fn match_advanced(input_line: &str, pattern: &str) -> Result<bool, String> {
                         return Ok(false);
                     }
                 }
+                Some('^') => {}
                 Some(other) => return Err(format!("Unhandled escape sequence: \\{}", other)),
                 None => return Err("Pattern ends with a single backslash".to_string()),
             }
@@ -52,6 +53,13 @@ fn match_advanced(input_line: &str, pattern: &str) -> Result<bool, String> {
                 }
             });
             if !matches {
+                return Ok(false);
+            }
+        } else if pattern_char == '^' {
+            //^ doesn't match a character, it matches the start of a line.
+            // Example: ^log should match "log", but not "slog".
+
+            if input_iter.next() != Some(pattern_iter.next().unwrap_or('\0')) {
                 return Ok(false);
             }
         } else {
