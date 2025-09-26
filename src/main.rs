@@ -1,5 +1,6 @@
 use std::env;
-use std::io;
+use std::fs::File;
+use std::io::{self, BufRead};
 use std::process;
 
 fn match_advanced(input_line: &str, pattern: &str) -> Result<bool, String> {
@@ -56,17 +57,12 @@ fn match_advanced(input_line: &str, pattern: &str) -> Result<bool, String> {
                 return Ok(false);
             }
         } else if pattern_char == '^' {
-            //^ doesn't match a character, it matches the start of a line.
-            // Example: ^log should match "log", but not "slog".
-
             if input_iter.next() != Some(pattern_iter.next().unwrap_or('\0'))
                 && pattern_iter.next().is_some()
             {
                 return Ok(false);
             }
         } else if pattern_char == '$' {
-            // $ doesn't match a character, it matches the end of a line.
-            // Example: log$ should match "log", but not "logs".
             if input_iter.next().is_some() {
                 return Ok(false);
             }
@@ -80,23 +76,27 @@ fn match_advanced(input_line: &str, pattern: &str) -> Result<bool, String> {
     Ok(true)
 }
 
-// Usage: echo <input_text> | your_program.sh -E <pattern>
 fn main() {
     if env::args().nth(1).unwrap() != "-E" {
-        println!("Expected first argument to be '-E'");
+        eprintln!("Expected first argument to be '-E'");
         process::exit(1);
     }
 
-    let file_name = env::args().nth(3).unwrap();
-    let file_content = std::fs::read_to_string(&file_name).unwrap();
-
     let pattern = env::args().nth(2).unwrap();
+    let file_name = env::args().nth(3).unwrap();
 
-    let result = match_advanced(&file_content, &pattern).unwrap_or(false);
+    let file = File::open(&file_name).unwrap();
+    let reader = io::BufReader::new(file);
 
-    if result {
-        process::exit(0)
-    } else {
-        process::exit(1)
+    let mut found = false;
+
+    for line in reader.lines() {
+        let line = line.unwrap();
+        if match_advanced(&line, &pattern).unwrap_or(false) {
+            println!("{}", line);
+            found = true;
+        }
     }
+
+    process::exit(if found { 0 } else { 1 });
 }
