@@ -2,8 +2,20 @@
 
 This project is a simple implementation of the `grep` command in Rust. It allows you to search for a specific pattern in a file and print the lines that contain the pattern.
 
+### Installation
+1. make sure you have Rust installed on your machine. If you don't have it yet, you can install it from [here](https://www.rust-lang.org/tools/install).
+2. Use cargo to install:
 
-### Usage
+```bash
+cargo install grep-rust-simple
+```
+3. Run the program using:
+
+```bash
+grep-rust-simple -E "pattern" filename # replace "pattern" and "filename" with your desired values
+```
+
+### Build and Run Locally
 1. Make sure you have Rust installed on your machine. If you don't have it yet, you can install it from [here](https://www.rust-lang.org/tools/install).
 
 2. Clone the repository:
