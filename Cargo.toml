@@ -1,7 +1,8 @@
 [package]
-name = "codecrafters-grep"
+name = "grep-rust"
 version = "0.1.0"
-authors = ["Codecrafters <hello@codecrafters.io>"]
+repository = "https://github.com/arjav0703/grep-rust"
+license = "MIT"
 edition = "2021"
 rust-version = "1.80"
 
